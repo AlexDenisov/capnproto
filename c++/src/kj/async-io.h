@@ -184,6 +184,29 @@ public:
   virtual Promise<Maybe<AutoCloseFd>> tryReceiveFd();
   virtual Promise<void> sendFd(int fd);
   // Transfer a raw file descriptor. Default implementation throws UNIMPLEMENTED.
+
+  virtual Promise<void> writeWithFds(ArrayPtr<const ArrayPtr<const byte>> pieces,
+                                     ArrayPtr<int> fds) = 0;
+  // Write some data to the stream with some file descirptors attached to it.
+  //
+  // The maximum number of FDs that can be sent at a time may be subject to the OS limit of
+  // SCM_MAX_FD. On Linux, this is 253. In practice, it's generally not a good idea to get anywhere
+  // near that limit.
+
+  struct ReadResult {
+    size_t byteCount;
+    size_t fdCount;
+  };
+
+  virtual Promise<ReadResult> tryReadWithFds(void* buffer, size_t minBytes, size_t maxBytes,
+                                             AutoCloseFd* fdBuffer, size_t maxFds) = 0;
+  // Read data from the stream that may have file descriptors attached. Any attached descriptors
+  // will be added to `fds`. If multiple bundles of FDs are encountered in the course of reading
+  // the amount of data requested by minBytes/maxBytes, then they will be concatenated. If more FDs
+  // are received than fit in the buffer, then the excess will be discarded and closed -- this
+  // behavior, while ugly, is important to defend against denial-of-service attacks that may fill
+  // up the FD table with garbage. Applications must think carefully about how many FDs they really
+  // need to receive at once and set a well-defined limit.
 };
 
 struct OneWayPipe {

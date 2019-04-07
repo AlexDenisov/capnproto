@@ -987,6 +987,12 @@ struct CapDescriptor {
     #
     # Level 1 and 2 implementations that receive a `thirdPartyHosted` may simply send calls to its
     # `vine` instead.
+
+    osHandle @6 :UInt32;
+    # This capability is an operating system handle, e.g. a file descriptor on Unix. The value of
+    # this field is an index into the table of OS handles which were sent along with this message.
+    # OS handles can only be sent over an underlying RPC transport which supports it, such as
+    # Unix domain sockets via SCM_RIGHTS.
   }
 }
 
